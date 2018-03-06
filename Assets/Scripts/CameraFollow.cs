@@ -8,13 +8,12 @@ public class CameraFollow : MonoBehaviour {
 
 	private Vector3 velocity = Vector3.zero;
 
-	// NOTE: If target movement is NOT reliant on in-built, use LateUpdate rather than FixedUpdate.
+	// NOTE: If target movement is NOT reliant on built-in physics, use LateUpdate instead of FixedUpdate.
 	void FixedUpdate () {
 
 			Vector3 desiredPosition = target.position + positionOffset;
 			Vector3 smoothedPosition = Vector3.SmoothDamp(transform.position, desiredPosition, ref velocity, smoothFactor * Time.deltaTime);
 			transform.position = smoothedPosition;
 			transform.LookAt(target);
-
 	}
 }

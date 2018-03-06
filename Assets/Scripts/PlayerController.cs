@@ -6,28 +6,35 @@ public class PlayerController : MonoBehaviour {
 
 	private Rigidbody rb;
 
+	[Header("Basic Settings")]
 	public float jumpVelocity = 10.0f;
+	public float boostVelocity = 20.0f;
 	public float walkSpeed = 5.0f;
 	public float runSpeed = 10.0f;
 
+	[Header("Smooth Settings")]
 	public float smoothTurn = 0.1f;
-	private float smoothTurnVelocity;
-
 	public float smoothSpeed = 0.25f;
+
+	private float smoothTurnVelocity;
 	private float smoothSpeedVelocity;
 	private float currentSpeed;
-
 	private bool jumpRequest = false;
+	private bool boostRequest = false;
 
 	// TODO setup animator component
 
 	private KeyCode RUNNING_KEY = KeyCode.LeftShift;
 	private KeyCode JUMP_KEY = KeyCode.Space;
+	private KeyCode BOOST_KEY = KeyCode.B; // temporary
 
-	Vector3 playerSize; 					// Player's box collision dimensions.
-	public float groundedSkin = 0.05f;		// How close player is to floor to be considered 'grounded'.
-	Vector3 boxSize;						// Box casting dimensions to check if grounded.
-	public LayerMask mask;					// Layers considered when checking groundedness (set as 'default').
+	[Header("Advanced Settings")]
+	[Tooltip("Tolerance for considering groundedness")]
+	public float groundedSkin = 0.05f;
+	[Tooltip("Layers considered when checking groundedness")]
+	public LayerMask mask;
+	private Vector3 playerSize;
+	private Vector3 boxSize;
 	private bool grounded = false;
 
 	void Awake () {
@@ -37,8 +44,11 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	void Update() {
-		// Handle jump input before handling in FixedUpdate.
-		if (Input.GetKeyDown(JUMP_KEY) && grounded) {
+		// Handle jump inputs before handling in FixedUpdate.
+		if (Input.GetKeyDown(BOOST_KEY) && grounded) {
+			boostRequest = true;
+		}
+		else if (Input.GetKeyDown(JUMP_KEY) && grounded) {
 			jumpRequest = true;
 		}
 	}
@@ -80,10 +90,11 @@ public class PlayerController : MonoBehaviour {
 	*/
 	void JumpHandler() {
 		// Execute jump if permitted.
-		if (jumpRequest) {
+		if (jumpRequest || boostRequest) {
 			Debug.Log("Jumping!");
-			rb.AddForce(Vector3.up * jumpVelocity, ForceMode.Impulse);
+			rb.AddForce(Vector3.up * (jumpRequest ? jumpVelocity : boostVelocity), ForceMode.Impulse);
 			jumpRequest = false;
+			boostRequest = false;
 		}
 		// Update grounded status.
 		Vector3 boxCenter = transform.position + Vector3.down * (playerSize.y + boxSize.y) * 0.5f;
