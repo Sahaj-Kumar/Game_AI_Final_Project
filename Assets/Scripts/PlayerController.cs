@@ -35,7 +35,7 @@ public class PlayerController : MonoBehaviour {
 	public LayerMask mask;
 	private Vector3 playerSize;
 	private Vector3 boxSize;
-	private bool grounded = false;
+	public bool grounded = false;
 
 	void Awake () {
 		rb = gameObject.GetComponent<Rigidbody>();
@@ -54,27 +54,31 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	/*
-		Handles player movement, which is partially	based off built-in physics.
-		Also, it was the only way to make the 3rd person camera stop being jittery :/
+		Handles player movement, which is partially based off built-in physics. Using FixedUpdate
+		because it was the only way to make the 3rd person camera stop being jittery :/
 	*/
 	void FixedUpdate () {
-		MoveHandler();
+		MoveHandler(GetMovementInput());
 		JumpHandler();
 	}
 
-	/**
-		Handles 'joystick' input for walking and running.
-		This is done with translation. (No physics)
-	*/
-	void MoveHandler() {
-		// Get input vector.
+	Vector2 GetMovementInput() {
 		Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-		Vector2 inputDirection = input.normalized;
+		return input.normalized;
+	}
+
+
+	/*
+		Handles joystick input for walking and running using translation.
+	*/
+	void MoveHandler(Vector2 inputDirection) {
+		// Get input vector.
+
 
 		// Set player's facing direction (with smoothing).
 		if (inputDirection != Vector2.zero) {
 			float targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.y) * Mathf.Rad2Deg;
-			transform.eulerAngles = Vector3.up * Mathf.SmoothDampAngle(transform.eulerAngles.y,targetRotation, ref smoothTurnVelocity, smoothTurn);
+			transform.eulerAngles = Vector3.up * Mathf.SmoothDampAngle(transform.eulerAngles.y, targetRotation, ref smoothTurnVelocity, smoothTurn);
 		}
 
 		// Translate player given input magnitude (with smoothing).
