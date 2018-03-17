@@ -4,16 +4,20 @@ using UnityEngine;
 
 public class GroundedFollower : MonoBehaviour {
 
-	public GameObject target;
+	/*
+		Follows target, but 
+	*/
+	public Transform target;
 	private PlayerController playerController;
 	private float groundReference;
+
 
 	// Use this for initialization
 	void Awake () {
 		playerController = target.GetComponent<PlayerController>();
 		groundReference = target.transform.position.y;
 	}
-	
+
 	// Update is called once per frame
 	void FixedUpdate () {
 		if (playerController.grounded) {

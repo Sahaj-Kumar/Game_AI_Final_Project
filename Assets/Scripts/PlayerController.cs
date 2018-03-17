@@ -37,10 +37,13 @@ public class PlayerController : MonoBehaviour {
 	private Vector3 boxSize;
 	public bool grounded = false;
 
+	private Animator animator;
+
 	void Awake () {
 		rb = gameObject.GetComponent<Rigidbody>();
 		playerSize = GetComponent<BoxCollider>().size;
 		boxSize = new Vector3(playerSize.x, groundedSkin, playerSize.z);
+		animator = GetComponent<Animator>();
 	}
 
 	void Update() {
@@ -48,7 +51,7 @@ public class PlayerController : MonoBehaviour {
 		if (Input.GetKeyDown(BOOST_KEY) && grounded) {
 			boostRequest = true;
 		}
-		else if (Input.GetKeyDown(JUMP_KEY) && grounded) {
+		else if (Input.GetButtonDown("Jump") && grounded) {
 			jumpRequest = true;
 		}
 	}
@@ -82,10 +85,13 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		// Translate player given input magnitude (with smoothing).
-		bool running = Input.GetKey(RUNNING_KEY);
+		bool running = Input.GetButton("Run");
 		float targetSpeed = (running ? runSpeed : walkSpeed) * inputDirection.magnitude;
 		currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed, ref smoothSpeedVelocity, smoothSpeed);
 		transform.Translate(transform.forward * currentSpeed * Time.deltaTime, Space.World);
+
+		float animationSpeedPercent = ((running) ? 1 : .5f) * inputDirection.magnitude;
+		animator.SetFloat("speedPercent", animationSpeedPercent, smoothSpeed, Time.deltaTime);
 	}
 
 	/*

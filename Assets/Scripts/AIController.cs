@@ -35,39 +35,42 @@ public class AIController : MonoBehaviour {
 	public bool jumpRequest = false;
 	public Vector3 LandingPoint = Vector3.zero;
 
+	private Animator animator;
+
 	void Awake () {
 		pathfindingManager = GetComponent<AStarFollow>();
 		rb = GetComponent<Rigidbody>();
+
 		pathfindingManager.setDestination(gPlayer);
 
 		playerSize = GetComponent<BoxCollider>().size;
 		boxSize = new Vector3(playerSize.x, groundedSkin, playerSize.z);
-
+		animator = GetComponent<Animator>();
 	}
 
 	void FixedUpdate () {
 
 		
-
-		if (useAStar) {
-			Vector3 direction = (pathfindingManager.getNextWaypoint() - transform.position);
-			Vector2	input = new Vector2(direction.x, direction.z).normalized;
-			MoveHandler(input);
-		}
-		else {
-			
-			Vector3 direction;
-			if (LandingPoint != Vector3.zero) {
-				Debug.Log("Using land point");
-				direction = LandingPoint - transform.position;
+		if (!jumpRequest || (jumpRequest && grounded)) {
+			if (useAStar) {
+				Vector3 direction = (pathfindingManager.getNextWaypoint() - transform.position);
+				Vector2	input = new Vector2(direction.x, direction.z).normalized;
+				MoveHandler(input);
 			}
 			else {
-				direction = gPlayer.position - transform.position;
-			}
+				Vector3 direction;
+				if (LandingPoint != Vector3.zero) {
+					Debug.Log("Using land point");
+					direction = LandingPoint - transform.position;
+				}
+				else {
+					direction = player.position - transform.position;
+				}
 
-			Vector2	input = new Vector2(direction.x, direction.z).normalized;
-			MoveHandler(input);
-			Debug.Log("AI in zone!");
+				Vector2	input = new Vector2(direction.x, direction.z).normalized;
+				MoveHandler(input);
+				Debug.Log("AI in zone!");
+			}
 		}
 		JumpRequest();
 	}
@@ -103,9 +106,11 @@ public class AIController : MonoBehaviour {
 		//Debug.Log(targetSpeed);
 		currentSpeed = Mathf.SmoothDamp(currentSpeed, targetSpeed, ref smoothSpeedVelocity, smoothSpeed);
 		transform.Translate(transform.forward * currentSpeed * Time.deltaTime, Space.World);
+
+		animator.SetFloat("speedPercent", currentSpeed / runSpeed, smoothSpeed, Time.deltaTime);
 	}
 
-	void JumpRequest() {
+	public void JumpRequest() {
 		// Execute jump if permitted.
 		if (jumpRequest && grounded) {
 			Debug.Log("AI Jumping!");
