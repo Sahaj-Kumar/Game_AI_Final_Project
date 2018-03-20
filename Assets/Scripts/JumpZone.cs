@@ -23,7 +23,7 @@ public class JumpZone : MonoBehaviour {
 		Debug.Log(LayerMask.GetMask("AI"));
 		if (LayerMask.LayerToName(other.gameObject.layer).Equals("AI")) {
 			//AIPlayer.useAStar = false;
-			other.gameObject.GetComponent<AIController>().useAStar = true;
+			//other.gameObject.GetComponent<AIController>().useAStar = true;
 		}
 		Debug.Log("Entered: " + other.gameObject);
 	}
@@ -31,7 +31,7 @@ public class JumpZone : MonoBehaviour {
 	void OnTriggerExit(Collider other) {
 		if (LayerMask.LayerToName(other.gameObject.layer).Equals("AI")) {
 			//AIPlayer.useAStar = true;
-			other.gameObject.GetComponent<AIController>().useAStar = false;
+			//other.gameObject.GetComponent<AIController>().useAStar = false;
 		}
 	}
 }

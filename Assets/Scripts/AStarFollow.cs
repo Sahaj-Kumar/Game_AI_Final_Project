@@ -35,11 +35,28 @@ public class AStarFollow : MonoBehaviour {
 		if (destination != null) {
 			NavMesh.CalculatePath(transform.position, destination.position, NavMesh.AllAreas, currentPath);
 			//Debug.Log(currentPath.status);
+			if (currentPath.corners.Length >= 2) {
+				return currentPath.corners[1];
+			}
+			else {
+				Debug.Log("No path available");
+				return Vector3.zero;
+			}
+		}
+		else {
+			Debug.LogError("Destination not set");
+			return transform.position;
+		}
+	}
+
+	public Vector3 getNextWaypoint(Vector3 destin) {
+		NavMesh.CalculatePath(transform.position, destin, NavMesh.AllAreas, currentPath);
+		if (currentPath.corners.Length >= 2) {
 			return currentPath.corners[1];
 		}
 		else {
-			Debug.LogError(":(");
-			return transform.position;
+			Debug.Log("No path availabe to " + destin);
+			return Vector3.zero;
 		}
 	}
 }

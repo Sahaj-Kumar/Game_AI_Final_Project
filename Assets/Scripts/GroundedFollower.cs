@@ -20,7 +20,7 @@ public class GroundedFollower : MonoBehaviour {
 
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (playerController.grounded) {
+		if (playerController.IsGrounded()) {
 			transform.position = target.transform.position;
 			groundReference = target.transform.position.y;
 		}

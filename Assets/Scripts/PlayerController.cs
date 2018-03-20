@@ -22,20 +22,18 @@ public class PlayerController : MonoBehaviour {
 	private bool jumpRequest = false;
 	private bool boostRequest = false;
 
-	// TODO setup animator component
-
-	private KeyCode RUNNING_KEY = KeyCode.LeftShift;
-	private KeyCode JUMP_KEY = KeyCode.Space;
 	private KeyCode BOOST_KEY = KeyCode.B; // temporary
 
 	[Header("Advanced Settings")]
 	[Tooltip("Tolerance for considering groundedness")]
+	public float respawnElevation;
+	private Vector3 jPlayer;
 	public float groundedSkin = 0.05f;
 	[Tooltip("Layers considered when checking groundedness")]
 	public LayerMask mask;
 	private Vector3 playerSize;
 	private Vector3 boxSize;
-	public bool grounded = false;
+	private bool grounded = false;
 
 	private Animator animator;
 
@@ -61,22 +59,34 @@ public class PlayerController : MonoBehaviour {
 		because it was the only way to make the 3rd person camera stop being jittery :/
 	*/
 	void FixedUpdate () {
+		if (transform.position.y < respawnElevation) {
+			transform.position = jPlayer;
+		}
 		MoveHandler(GetMovementInput());
 		JumpHandler();
+		updateLastJump();
+		float jumpAnimation = Mathf.Clamp(rb.velocity.y * (0.5f / jumpVelocity) + 0.5f, 0, 1);
+		animator.SetFloat("verticalVelocity", jumpAnimation);
 	}
 
+	void updateLastJump() {
+		if (grounded) {
+			jPlayer = transform.position;
+		}
+	}
+
+	/*
+		Returns horizontal and vertical input.	
+	*/
 	Vector2 GetMovementInput() {
 		Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 		return input.normalized;
 	}
 
-
 	/*
 		Handles joystick input for walking and running using translation.
 	*/
 	void MoveHandler(Vector2 inputDirection) {
-		// Get input vector.
-
 
 		// Set player's facing direction (with smoothing).
 		if (inputDirection != Vector2.zero) {
@@ -109,6 +119,14 @@ public class PlayerController : MonoBehaviour {
 		// Update grounded status.
 		Vector3 boxCenter = transform.position + Vector3.down * (playerSize.y + boxSize.y) * 0.5f;
 		grounded = (Physics.OverlapBox(boxCenter, boxSize, Quaternion.identity, mask).Length > 0);
+		animator.SetBool("grounded", grounded);
+	}
+
+	/*
+		Returns whether the player is on solid ground.
+	*/
+	public bool IsGrounded() {
+		return grounded;
 	}
 
 }

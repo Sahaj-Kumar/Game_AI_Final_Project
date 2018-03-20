@@ -8,6 +8,8 @@ public class PitJumper : MonoBehaviour {
 	private BoxCollider boxCollider;
 	public Vector3 jumpVector;
 	public LayerMask mask;
+	public bool leftJump = true;
+	public bool rightJump = true;
 
 	private Vector3 LeftBoxCenter;
 	private Quaternion LeftBoxRotation;
@@ -31,22 +33,27 @@ public class PitJumper : MonoBehaviour {
 
 	void OnTriggerEnter(Collider other) {
 		if (LayerMask.LayerToName(other.gameObject.layer).Equals("AI")) {
-			Debug.Log("Entering pit");
+			bool onLeft = Physics.OverlapBox(LeftBoxCenter, LeftBoxSize, LeftBoxRotation, mask).Length > 0;
 			AIController AIPlayer = other.gameObject.GetComponent<AIController>();
-			AIPlayer.jumpRequest = true;
+			if ((onLeft && rightJump) || (!onLeft && leftJump)) {
+				AIPlayer.RequestJump();
+			}
 			Vector3 otherSide = AIPlayer.transform.position;
-			//otherSide.x += boxCollider.size.x * ((Physics.OverlapBox(LeftBoxCenter, LeftBoxSize, LeftBoxRotation, mask).Length > 0) ? 2 : -2);
-			otherSide += (Physics.OverlapBox(LeftBoxCenter, LeftBoxSize, LeftBoxRotation, mask).Length > 0) ? jumpVector : -jumpVector;
-			Debug.Log(otherSide);
-			AIPlayer.LandingPoint = otherSide;
+			otherSide += onLeft ? jumpVector : -jumpVector;
+			AIPlayer.SetLandingPoint(otherSide);
 		}
 	}
 
 	IEnumerator FinishJump(AIController AIPlayer) {
-		yield return new WaitForSeconds(0.1f);
+		//yield return new WaitForSeconds(0.1f);
 		Debug.Log("Exiting pit");
-
-		AIPlayer.LandingPoint = Vector3.zero;
+		while (true) {
+			yield return new WaitForSeconds(0.05f);
+			if (AIPlayer.IsGrounded()) {
+				break;
+			}
+		}
+		AIPlayer.ClearLandingPoint();
 	}
 
 	void OnTriggerExit(Collider other) {
