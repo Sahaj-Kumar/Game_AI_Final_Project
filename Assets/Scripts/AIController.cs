@@ -35,10 +35,16 @@ public class AIController : MonoBehaviour {
 	private Vector3 boxSize;
 	private bool grounded = true;
 
+	private Vector3 colliderOffset;
+
 	private bool jumpRequest = false;
 	private Vector3 LandingPoint = Vector3.zero;
 
+	public float respawnElevation;
+
 	private Animator animator;
+
+	private bool seeking = false;
 
 	void Awake () {
 		pathfindingManager = GetComponent<AStarFollow>();
@@ -48,14 +54,20 @@ public class AIController : MonoBehaviour {
 
 		//pathfindingManager.setDestination(gPlayer);
 
-		playerSize = GetComponent<BoxCollider>().size;
+		BoxCollider bc = GetComponent<BoxCollider>();
+		playerSize = bc.size;
+		colliderOffset = bc.center;
 		boxSize = new Vector3(playerSize.x, groundedSkin, playerSize.z);
 		animator = GetComponent<Animator>();
 	}
 
 	void FixedUpdate () {
-
-		MoveHandler(GetDirection());
+		if (transform.position.y < respawnElevation) {
+			transform.position = jAIPlayer + (Vector3.up * 5.0f);
+		}
+		if (seeking) {
+			MoveHandler(GetDirection());
+		}
 		updatePlayerPositions();
 		float jumpAnimation = Mathf.Clamp(rb.velocity.y * (0.5f / jumpVelocity) + 0.5f, 0, 1);
 		animator.SetFloat("verticalVelocity", jumpAnimation);
@@ -89,7 +101,7 @@ public class AIController : MonoBehaviour {
 			gPlayer = temp;
 		}
 		// update last jump player position
-		if (grounded) {
+		if (IsSafeGrounded()) {
 			jAIPlayer = transform.position;
 		}
 	}
@@ -174,7 +186,7 @@ public class AIController : MonoBehaviour {
 			jumpRequest = false;
 		}
 		// Update grounded status.
-		Vector3 boxCenter = transform.position + Vector3.down * (playerSize.y + boxSize.y) * 0.5f;
+		Vector3 boxCenter = transform.position + colliderOffset + Vector3.down * (playerSize.y + boxSize.y) * 0.5f;
 		grounded = (Physics.OverlapBox(boxCenter, boxSize, Quaternion.identity, mask).Length > 0);
 		animator.SetBool("grounded", grounded);
 	}
@@ -205,5 +217,25 @@ public class AIController : MonoBehaviour {
 	*/
 	public void ClearLandingPoint() {
 		LandingPoint = Vector3.zero;
+	}
+
+	private bool IsSafeGrounded() {
+		Vector3 right = transform.position;
+		right.x += playerSize.x;
+		Vector3 left = transform.position;
+		left.x -= playerSize.x;
+		Vector3 top = transform.position;
+		top.z += playerSize.z;
+		Vector3 bottom = transform.position;
+		bottom.z -= playerSize.z;
+		return Physics.Raycast(right, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask) &&
+			Physics.Raycast(left, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask) &&
+			Physics.Raycast(top, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask) &&
+			Physics.Raycast(bottom, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask);
+ 
+	}
+
+	public void SetSeeking(bool s) {
+		seeking = s;
 	}
 }

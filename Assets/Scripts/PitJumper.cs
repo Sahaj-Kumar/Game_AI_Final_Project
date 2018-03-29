@@ -33,13 +33,18 @@ public class PitJumper : MonoBehaviour {
 
 	void OnTriggerEnter(Collider other) {
 		if (LayerMask.LayerToName(other.gameObject.layer).Equals("AI")) {
-			bool onLeft = Physics.OverlapBox(LeftBoxCenter, LeftBoxSize, LeftBoxRotation, mask).Length > 0;
 			AIController AIPlayer = other.gameObject.GetComponent<AIController>();
-			if ((onLeft && rightJump) || (!onLeft && leftJump)) {
-				AIPlayer.RequestJump();
-			}
+			bool onLeft = Physics.OverlapBox(LeftBoxCenter, LeftBoxSize, LeftBoxRotation, mask).Length > 0;
 			Vector3 otherSide = AIPlayer.transform.position;
-			otherSide += onLeft ? jumpVector : -jumpVector;
+			if (AIPlayer.IsGrounded()) {
+				if ((onLeft && rightJump) || (!onLeft && leftJump)) {
+					AIPlayer.RequestJump();
+				}
+				otherSide += onLeft ? jumpVector : -jumpVector;
+			}
+			else {
+				otherSide += onLeft ? -jumpVector : jumpVector;
+			}
 			AIPlayer.SetLandingPoint(otherSide);
 		}
 	}

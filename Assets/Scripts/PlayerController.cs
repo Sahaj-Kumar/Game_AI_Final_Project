@@ -21,8 +21,10 @@ public class PlayerController : MonoBehaviour {
 	private float currentSpeed;
 	private bool jumpRequest = false;
 	private bool boostRequest = false;
+	private bool pickupRequest = false;
 
 	private KeyCode BOOST_KEY = KeyCode.B; // temporary
+	private KeyCode PICKUP_KEY = KeyCode.E; // temporary
 
 	[Header("Advanced Settings")]
 	[Tooltip("Tolerance for considering groundedness")]
@@ -35,11 +37,19 @@ public class PlayerController : MonoBehaviour {
 	private Vector3 boxSize;
 	private bool grounded = false;
 
+	public LayerMask mask2;
+	private Transform pickup;
+
+
+	private Vector3 colliderOffset;
+
 	private Animator animator;
 
 	void Awake () {
 		rb = gameObject.GetComponent<Rigidbody>();
-		playerSize = GetComponent<BoxCollider>().size;
+		BoxCollider bc = GetComponent<BoxCollider>();
+		playerSize = bc.size;
+		colliderOffset = bc.center;
 		boxSize = new Vector3(playerSize.x, groundedSkin, playerSize.z);
 		animator = GetComponent<Animator>();
 	}
@@ -52,6 +62,10 @@ public class PlayerController : MonoBehaviour {
 		else if (Input.GetButtonDown("Jump") && grounded) {
 			jumpRequest = true;
 		}
+
+		if (Input.GetKeyDown(PICKUP_KEY)) {
+			pickupRequest = true;
+		}
 	}
 
 	/*
@@ -60,17 +74,18 @@ public class PlayerController : MonoBehaviour {
 	*/
 	void FixedUpdate () {
 		if (transform.position.y < respawnElevation) {
-			transform.position = jPlayer;
+			transform.position = jPlayer + (Vector3.up * 5.0f);
 		}
 		MoveHandler(GetMovementInput());
 		JumpHandler();
+		PickupHandler();
 		updateLastJump();
 		float jumpAnimation = Mathf.Clamp(rb.velocity.y * (0.5f / jumpVelocity) + 0.5f, 0, 1);
 		animator.SetFloat("verticalVelocity", jumpAnimation);
 	}
 
 	void updateLastJump() {
-		if (grounded) {
+		if (IsSafeGrounded()) {
 			jPlayer = transform.position;
 		}
 	}
@@ -117,9 +132,42 @@ public class PlayerController : MonoBehaviour {
 			boostRequest = false;
 		}
 		// Update grounded status.
-		Vector3 boxCenter = transform.position + Vector3.down * (playerSize.y + boxSize.y) * 0.5f;
+		Vector3 boxCenter = transform.position + colliderOffset + Vector3.down * (playerSize.y + boxSize.y) * 0.5f;
 		grounded = (Physics.OverlapBox(boxCenter, boxSize, Quaternion.identity, mask).Length > 0);
 		animator.SetBool("grounded", grounded);
+	}
+
+	void PickupHandler() {
+		if (pickupRequest) {
+			if (pickup) {
+				// TODO: only drop pickup if nothing is in the way of placement.
+				pickup.position = transform.position + transform.forward * playerSize.z + transform.up * playerSize.y / 2;
+				Rigidbody pickupRB = pickup.GetComponent<Rigidbody>();
+				pickupRB.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+				// NOTE: constant velocity of 2 is additionally added to pickup when letting go. 
+				pickupRB.velocity = rb.velocity + transform.forward * (currentSpeed + 2f);
+				pickup = null;
+			}
+			else {
+				Vector3 pickupCenter = transform.position + transform.forward * playerSize.z;
+				Vector3 pickupSize = playerSize;
+				Collider[] pickups = Physics.OverlapBox(pickupCenter, pickupSize, Quaternion.identity, mask2);
+				if (pickups.Length > 0) {
+					pickup = pickups[0].gameObject.transform;
+					pickup.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezePositionY;
+					Debug.Log("can pick up: " + pickups[0]);
+				}
+				else {
+					Debug.Log("nothing to pick up");
+				}
+			}
+			pickupRequest = false;
+		}
+		else if (pickup) {
+			pickup.position = transform.position + colliderOffset + transform.up * playerSize.y * 0.75f;
+			pickup.rotation = transform.rotation;
+
+		}
 	}
 
 	/*
@@ -127,6 +175,22 @@ public class PlayerController : MonoBehaviour {
 	*/
 	public bool IsGrounded() {
 		return grounded;
+	}
+
+	private bool IsSafeGrounded() {
+		Vector3 right = transform.position;
+		right.x += playerSize.x;
+		Vector3 left = transform.position;
+		left.x -= playerSize.x;
+		Vector3 top = transform.position;
+		top.z += playerSize.z;
+		Vector3 bottom = transform.position;
+		bottom.z -= playerSize.z;
+		return Physics.Raycast(right, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask) &&
+			Physics.Raycast(left, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask) &&
+			Physics.Raycast(top, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask) &&
+			Physics.Raycast(bottom, Vector3.down, (playerSize.y + boxSize.y) + groundedSkin, mask);
+ 
 	}
 
 }
